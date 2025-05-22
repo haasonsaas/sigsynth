@@ -78,57 +78,68 @@ class RuleValidator:
         if 'not' in criteria:
             return not self._evaluate_criteria(criteria['not'], log_entry)
             
-        # Handle field conditions
+        # Handle field conditions: ALL fields must match
         for field, condition in criteria.items():
             if field not in log_entry:
                 return False
-                
             value = log_entry[field]
-            
             # Handle regex patterns
             if isinstance(condition, re.Pattern):
                 if not isinstance(value, str):
                     return False
-                return bool(condition.search(value))
-                
+                if not condition.search(value):
+                    return False
             # Handle exact matches
-            if isinstance(condition, (str, int, float, bool)):
-                return value == condition
-                
-            # Handle lists
-            if isinstance(condition, list):
+            elif isinstance(condition, (str, int, float, bool)):
+                if value != condition:
+                    return False
+            # Handle lists (case-insensitive match for any value)
+            elif isinstance(condition, list):
                 if isinstance(value, list):
-                    return all(item in value for item in condition)
-                return value in condition
-                
+                    if not all(any(item.lower() == v.lower() for v in value) for item in condition):
+                        return False
+                else:
+                    if not any(item.lower() == value.lower() for item in condition):
+                        return False
             # Handle comparison operators
-            if isinstance(condition, dict):
+            elif isinstance(condition, dict):
                 for op, op_value in condition.items():
                     if op == '|re':
                         if not isinstance(value, str):
                             return False
-                        return bool(re.search(op_value, value))
+                        if not re.search(op_value, value):
+                            return False
                     elif op == '|contains':
                         if not isinstance(value, str):
                             return False
-                        return op_value in value
+                        if op_value.lower() not in value.lower():
+                            return False
                     elif op == '|startswith':
                         if not isinstance(value, str):
                             return False
-                        return value.startswith(op_value)
+                        if not value.lower().startswith(op_value.lower()):
+                            return False
                     elif op == '|endswith':
                         if not isinstance(value, str):
                             return False
-                        return value.endswith(op_value)
+                        if not value.lower().endswith(op_value.lower()):
+                            return False
                     elif op == '|gt':
-                        return value > op_value
+                        if not value > op_value:
+                            return False
                     elif op == '|gte':
-                        return value >= op_value
+                        if not value >= op_value:
+                            return False
                     elif op == '|lt':
-                        return value < op_value
+                        if not value < op_value:
+                            return False
                     elif op == '|lte':
-                        return value <= op_value
+                        if not value <= op_value:
+                            return False
                     else:
-                        return self._evaluate_criteria(condition, log_entry)
-                        
+                        if not self._evaluate_criteria(condition, log_entry):
+                            return False
+            else:
+                # Unknown condition type
+                return False
         return True 
