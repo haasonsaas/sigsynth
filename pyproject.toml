@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sigsynth"
+version = "0.1.0"
+description = "Generate and validate synthetic log tests for Sigma rules against Panther"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    { name = "Your Name", email = "your.email@example.com" }
+]
+dependencies = [
+    "click>=8.0.0",
+    "pyyaml>=6.0",
+    "openai>=1.0.0",
+    "pydantic>=2.0.0",
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+sigsynth = "sigsynth.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sigsynth"] 

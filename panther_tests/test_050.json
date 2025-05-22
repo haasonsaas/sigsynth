@@ -1,0 +1,9 @@
+{
+  "id": "aws-cloudtrail-config-change-50",
+  "type": "generated_test",
+  "log": {
+    "eventSource": "cloudtrail.amazonaws.com",
+    "eventName": "STOPLOGGING"
+  },
+  "should_trigger": false
+}

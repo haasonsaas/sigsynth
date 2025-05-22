@@ -1,0 +1,9 @@
+{
+  "id": "aws-cloudtrail-config-change-109",
+  "type": "generated_test",
+  "log": {
+    "eventSource": "cloudtrail.amazonaws.com",
+    "eventName": "DeleteTrail"
+  },
+  "should_trigger": true
+}

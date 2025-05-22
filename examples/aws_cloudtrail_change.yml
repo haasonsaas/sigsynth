@@ -1,0 +1,23 @@
+title: AWS CloudTrail Configuration Change
+id: aws-cloudtrail-config-change
+description: Detects changes to CloudTrail configuration
+status: test
+author: SigmaTestGen
+date: 2024/03/20
+logsource:
+    product: aws
+    service: cloudtrail
+detection:
+    selection:
+        eventName:
+            - CreateTrail
+            - DeleteTrail
+            - UpdateTrail
+            - PutEventSelectors
+            - PutInsightSelectors
+        eventSource: cloudtrail.amazonaws.com
+    condition: selection
+level: medium
+tags:
+    - attack.persistence
+    - attack.defense_evasion 

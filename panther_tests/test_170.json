@@ -1,0 +1,9 @@
+{
+  "id": "aws-cloudtrail-config-change-170",
+  "type": "generated_test",
+  "log": {
+    "eventSource": "cloudtrail.amazonaws.com",
+    "eventName": "UpdateTrail"
+  },
+  "should_trigger": true
+}

@@ -1,0 +1,9 @@
+{
+  "id": "aws-cloudtrail-config-change-148",
+  "type": "generated_test",
+  "log": {
+    "eventName": "StartLogging",
+    "eventSource": "cloudtrail.amazonaws.com"
+  },
+  "should_trigger": false
+}
