@@ -34,22 +34,22 @@ class LocalExpander:
             List of expanded test variants
         """
         variants = []
-        
-        # Calculate samples per seed
-        samples_per_positive = target_samples // (2 * len(positive_seeds))
-        samples_per_negative = target_samples // (2 * len(negative_seeds))
-        
+        total_seeds = len(positive_seeds) + len(negative_seeds)
+        if total_seeds == 0:
+            return []
+        # Distribute samples as evenly as possible, at least 1 per seed
+        min_per_seed = max(1, target_samples // total_seeds)
+        remaining = target_samples - (min_per_seed * total_seeds)
         # Expand positive seeds
-        for seed in positive_seeds:
-            variants.extend(self._expand_seed(seed, samples_per_positive, should_trigger=True))
-            
+        for i, seed in enumerate(positive_seeds):
+            n = min_per_seed + (1 if i < remaining else 0)
+            variants.extend(self._expand_seed(seed, n, should_trigger=True))
         # Expand negative seeds
-        for seed in negative_seeds:
-            variants.extend(self._expand_seed(seed, samples_per_negative, should_trigger=False))
-            
+        for i, seed in enumerate(negative_seeds):
+            n = min_per_seed + (1 if (i + len(positive_seeds)) < remaining else 0)
+            variants.extend(self._expand_seed(seed, n, should_trigger=False))
         # Shuffle variants
         random.shuffle(variants)
-        
         return variants[:target_samples]
     
     def _expand_seed(

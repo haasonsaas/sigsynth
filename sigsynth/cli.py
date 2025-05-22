@@ -68,18 +68,20 @@ def generate(rule: Path, platform: str, seed_samples: int, samples: int,
         # Initialize components
         seed_gen = SeedGenerator()
         expander = LocalExpander(random_seed=random_seed)
+        
         # Flatten detection criteria if 'selection' is present
         if isinstance(detection_criteria, dict) and 'selection' in detection_criteria:
             flat_criteria = detection_criteria['selection']
         else:
             flat_criteria = detection_criteria
+            
         validator = RuleValidator(flat_criteria)
         formatter = PantherFormatter(sigma_rule.id)
         
         # Generate seeds
         console.print("[bold]Generating seed samples...[/bold]")
         positive_seeds, negative_seeds = seed_gen.generate_seeds(
-            detection_criteria,
+            flat_criteria,  # Use flattened criteria here
             seed_samples
         )
         
@@ -93,6 +95,9 @@ def generate(rule: Path, platform: str, seed_samples: int, samples: int,
                 samples
             )
             progress.update(task, completed=samples)
+        console.print(f"[yellow]Number of variants generated: {len(variants)}[/yellow]")
+        if variants:
+            console.print(f"[yellow]Sample variant: {variants[0]}[/yellow]")
         
         # Validate variants
         console.print("[bold]Validating variants...[/bold]")
@@ -103,8 +108,9 @@ def generate(rule: Path, platform: str, seed_samples: int, samples: int,
             task = progress.add_task("Validating...", total=len(variants))
             
             for i, variant in enumerate(variants):
-                # Determine if this variant should trigger
                 should_trigger = validator.validate_entry(variant)
+                console.print(f"[cyan]Variant {i} validation: should_trigger={should_trigger}, variant={variant}[/cyan]")
+                # Determine if this variant should trigger
                 
                 # Format test case
                 test_case = formatter.format_test_case(

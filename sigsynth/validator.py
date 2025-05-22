@@ -128,5 +128,7 @@ class RuleValidator:
                         return value < op_value
                     elif op == '|lte':
                         return value <= op_value
+                    else:
+                        return self._evaluate_criteria(condition, log_entry)
                         
         return True 

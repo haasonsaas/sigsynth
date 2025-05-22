@@ -50,6 +50,8 @@ class SeedGenerator:
             )
             
             result = response.choices[0].message.content
+            console.print("[yellow]OpenAI raw response:[/yellow]")
+            console.print(result)
             positive_seeds, negative_seeds = self._parse_response(result)
             
             return positive_seeds[:num_seeds], negative_seeds[:num_seeds]
