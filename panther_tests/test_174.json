@@ -1,9 +1,0 @@
-{
-  "id": "aws-cloudtrail-config-change-174",
-  "type": "generated_test",
-  "log": {
-    "eventSource": "cloudtrail.amazonaws.com",
-    "eventName": "puteventselectors"
-  },
-  "should_trigger": false
-}
