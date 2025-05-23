@@ -131,28 +131,27 @@ def merge_env_vars(config_data: Dict[str, Any]) -> Dict[str, Any]:
         "SIGSYNTH_DEBUG_VERBOSE": ["debug", "verbose", bool],
     }
     
-    for env_var, (path, *type_info) in env_mappings.items():
+    for env_var, mapping_info in env_mappings.items():
         value = os.getenv(env_var)
         if value is not None:
             # Convert type if specified
-            if type_info:
-                type_func = type_info[0]
+            if len(mapping_info) > 2:
+                type_func = mapping_info[2]
                 if type_func == bool:
                     value = value.lower() in ("true", "1", "yes", "on")
                 else:
                     value = type_func(value)
             
+            path = mapping_info[0] if len(mapping_info) > 1 else mapping_info[0]
+            
             # Set nested value
-            if isinstance(path, str):
-                config_data[path] = value
-            else:
-                # Handle nested paths like ["batch", "parallel_workers"]
-                current = config_data
-                for key in path[:-1]:
-                    if key not in current:
-                        current[key] = {}
-                    current = current[key]
-                current[path[-1]] = value
+            if len(mapping_info) == 3:  # [path, subpath, type]
+                main_key, sub_key = mapping_info[0], mapping_info[1]
+                if main_key not in config_data:
+                    config_data[main_key] = {}
+                config_data[main_key][sub_key] = value
+            else:  # [path, type] or [path]
+                config_data[mapping_info[0]] = value
     
     return config_data
 

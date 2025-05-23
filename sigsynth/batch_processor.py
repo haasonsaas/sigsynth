@@ -99,7 +99,8 @@ class BatchProcessor:
             relative_path = file_path.relative_to(rules_dir)
             
             for exclude_pattern in exclude_patterns:
-                if fnmatch.fnmatch(str(relative_path), exclude_pattern):
+                # Use pathlib's match for glob-style patterns
+                if relative_path.match(exclude_pattern) or fnmatch.fnmatch(str(relative_path), exclude_pattern):
                     excluded = True
                     break
             
