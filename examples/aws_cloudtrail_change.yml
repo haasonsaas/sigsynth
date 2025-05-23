@@ -2,7 +2,7 @@ title: AWS CloudTrail Configuration Change
 id: aws-cloudtrail-config-change
 description: Detects changes to CloudTrail configuration
 status: test
-author: SigmaTestGen
+author: SigSynth
 date: 2024/03/20
 logsource:
     product: aws

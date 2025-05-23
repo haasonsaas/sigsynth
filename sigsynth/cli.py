@@ -1,4 +1,4 @@
-"""Command-line interface for SigmaTestGen.
+"""Command-line interface for SigSynth.
 
 This module provides a CLI for generating and validating synthetic log tests for Sigma rules.
 The CLI supports:
