@@ -88,8 +88,8 @@ class BatchProcessor:
             matches = list(rules_dir.glob(pattern))
             rule_files.extend(matches)
         
-        # Remove duplicates and filter out excluded patterns
-        unique_files = list(set(rule_files))
+        # Remove duplicates while preserving the order and filter out excluded patterns
+        unique_files = list(dict.fromkeys(rule_files))
         filtered_files = []
         
         for file_path in unique_files:
