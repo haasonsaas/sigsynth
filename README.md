@@ -1,6 +1,6 @@
 # SigSynth
 
-A tool for generating and validating synthetic log tests for Sigma rules against Panther, using a single OpenAI call per rule and local expansion for edge-case coverage.
+A comprehensive detection engineering platform for generating and validating synthetic log tests for Sigma rules. Features AI-powered test generation, batch processing, and multi-platform support with enterprise-grade scalability.
 
 ## Features
 
@@ -18,6 +18,13 @@ A tool for generating and validating synthetic log tests for Sigma rules against
 ```bash
 pip install sigsynth
 ```
+
+> **Note**: SigSynth is currently in development. Install from source for the latest features:
+> ```bash
+> git clone https://github.com/haasonsaas/sigsynth.git
+> cd sigsynth
+> pip install -e .
+> ```
 
 ## Quick Start
 
@@ -151,6 +158,8 @@ SigSynth provides flexible configuration through:
 
 📊 **Scales efficiently**: Process thousands of rules with parallel workers
 
+> **Production Ready**: Used by security teams to generate comprehensive test suites for detection rule validation and CI/CD pipelines.
+
 ## Development
 
 ```bash
@@ -165,6 +174,21 @@ pytest tests/ -v
 ```
 
 **Contributing**: See [USAGE.md](./USAGE.md#development) for detailed development guide.
+
+## What's New
+
+### v0.2.0 - Production-Ready Platform
+- 🆕 **Batch Processing**: Parallel processing of multiple rules with configurable workers
+- 🆕 **Multi-Platform Framework**: Extensible architecture ready for Splunk, Elastic, QRadar
+- 🆕 **Configuration Management**: YAML configs with environment variable overrides
+- 🆕 **Enhanced CLI**: New commands with rich console output and progress tracking
+- 🆕 **World-Class Documentation**: 3 comprehensive guides (USAGE.md, TROUBLESHOOTING.md, examples)
+- 🆕 **Enterprise Features**: CI/CD integration, team configurations, performance optimization
+
+### v0.1.0 - Initial Release
+- Single rule processing with OpenAI-powered test generation
+- Panther platform support
+- Local test expansion and validation
 
 ## Documentation
 
