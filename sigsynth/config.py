@@ -136,12 +136,10 @@ def merge_env_vars(config_data: Dict[str, Any]) -> Dict[str, Any]:
         if value is not None:
             # Convert type (always the last element)
             type_func = mapping_info[-1]
-            if type_func == bool:
+            if type_func is bool:
                 value = value.lower() in ("true", "1", "yes", "on")
             else:
                 value = type_func(value)
-            
-            path = mapping_info[0] if len(mapping_info) > 1 else mapping_info[0]
             
             # Set nested value
             if len(mapping_info) == 3:  # [path, subpath, type]
