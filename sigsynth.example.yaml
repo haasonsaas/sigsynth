@@ -1,0 +1,60 @@
+# SigSynth Configuration Example
+# Copy this file to 'sigsynth.yaml' and customize for your needs
+
+# Core test generation settings
+seed_samples: 5              # Number of AI-generated seed samples per rule (1-50)
+samples: 200                 # Total test cases to generate per rule (10-5000)
+random_seed: 42              # Set for reproducible results (optional)
+
+# Platform configurations
+platforms:
+  panther:
+    name: panther
+    output_format: json
+    custom_options:
+      test_prefix: "test_"     # Prefix for test file names
+      include_metadata: true   # Include generation metadata
+
+# Batch processing settings
+batch:
+  input_patterns:            # File patterns to include
+    - "**/*.yml"
+    - "**/*.yaml"
+  exclude_patterns:          # Patterns to exclude
+    - "**/draft/**"          # Draft rules
+    - "**/experimental/**"   # Experimental rules
+    - "**/*.disabled.yml"    # Disabled rules
+    - "**/test/**"           # Test files
+  parallel_workers: 4        # Number of parallel workers (adjust for your CPU)
+  fail_fast: false          # Stop on first error (set true for CI/CD)
+
+# Debug settings (for development)
+debug:
+  enabled: false            # Enable debug output
+  verbose: false            # Verbose debug information
+  trace_validation: false   # Trace rule validation steps
+
+# Example configurations for different environments:
+
+# Development (fast iteration):
+# seed_samples: 3
+# samples: 100
+# batch:
+#   parallel_workers: 2
+#   fail_fast: false
+# debug:
+#   enabled: true
+
+# Production (comprehensive testing):
+# seed_samples: 15
+# samples: 1000
+# batch:
+#   parallel_workers: 16
+#   fail_fast: true
+
+# CI/CD (balanced speed and coverage):
+# seed_samples: 5
+# samples: 200
+# batch:
+#   parallel_workers: 8
+#   fail_fast: true
