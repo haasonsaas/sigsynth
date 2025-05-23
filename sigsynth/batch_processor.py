@@ -66,16 +66,17 @@ class BatchProcessor:
 
     def find_rule_files(self, rules_dir: Path, patterns: List[str] = None,
                        exclude_patterns: List[str] = None) -> List[Path]:
-        """Find Sigma rule files matching patterns.
-        
-        Args:
-            rules_dir: Directory to search for rules
-            patterns: File patterns to match (default from config)
-            exclude_patterns: Patterns to exclude (default from config)
-            
-        Returns:
-            List of rule file paths
         """
+                       Searches for Sigma rule files in a directory matching specified patterns, excluding files that match any exclude patterns.
+                       
+                       Args:
+                           rules_dir: The directory to search for Sigma rule files.
+                           patterns: Optional list of glob patterns to include; defaults to configuration if not provided.
+                           exclude_patterns: Optional list of patterns to exclude; defaults to configuration if not provided.
+                       
+                       Returns:
+                           A sorted list of unique file paths matching the include patterns and not matching any exclude patterns.
+                       """
         if patterns is None:
             patterns = self.config.batch.input_patterns
         if exclude_patterns is None:
