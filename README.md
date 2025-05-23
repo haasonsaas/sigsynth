@@ -11,7 +11,7 @@ A comprehensive detection engineering platform for generating and validating syn
 - **AI-Powered Seed Generation**: Generate realistic positive and negative test seeds using OpenAI
 - **Local Test Expansion**: Create test variants locally to maximize coverage while minimizing API costs
 - **Rule Validation**: Validate tests against rule logic with detailed error reporting
-- **Debug Mode**: Detailed tracing and debugging capabilities (coming soon)
+- **Comprehensive Debugging**: Rule analysis, complexity metrics, tracing, and detailed reporting
 
 ## Installation
 
@@ -182,6 +182,7 @@ pytest tests/ -v
 - 🆕 **Multi-Platform Framework**: Extensible architecture ready for Splunk, Elastic, QRadar
 - 🆕 **Configuration Management**: YAML configs with environment variable overrides
 - 🆕 **Enhanced CLI**: New commands with rich console output and progress tracking
+- 🆕 **Comprehensive Debugging**: Rule analysis, complexity metrics, tracing, and detailed reporting
 - 🆕 **World-Class Documentation**: 3 comprehensive guides (USAGE.md, TROUBLESHOOTING.md, examples)
 - 🆕 **Enterprise Features**: CI/CD integration, team configurations, performance optimization
 
@@ -205,7 +206,34 @@ pytest tests/ -v
 sigsynth --help
 sigsynth generate --help
 sigsynth batch --help
+sigsynth debug --help
 ```
+
+### Debug and Analysis
+
+SigSynth includes comprehensive debugging and analysis capabilities:
+
+```bash
+# Analyze rule complexity and compatibility
+sigsynth debug --rule my_rule.yml
+
+# Enable detailed tracing
+sigsynth debug --rule my_rule.yml --trace
+
+# Save analysis report
+sigsynth debug --rule my_rule.yml --output analysis.json
+
+# Analyze specific test case
+sigsynth debug --rule my_rule.yml --test-case 5 --trace
+```
+
+**Debug Features:**
+- 🔍 **Rule Complexity Analysis**: Difficulty assessment, field counting, regex detection
+- ⚠️ **Issue Detection**: Parsing warnings, validation issues, performance concerns
+- 🖥️ **Platform Compatibility**: Automatic compatibility checking with detailed warnings
+- 📊 **Test Coverage Analysis**: Positive/negative scenarios, field coverage, edge cases
+- 📝 **Detailed Tracing**: Step-by-step processing with timing and success tracking
+- 💾 **Multi-Format Reports**: Console, JSON, text, and HTML output formats
 
 ## License
 

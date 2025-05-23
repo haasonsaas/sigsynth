@@ -7,12 +7,13 @@ This guide provides detailed instructions for using SigSynth in real-world scena
 1. [Quick Start](#quick-start)
 2. [Single Rule Generation](#single-rule-generation)
 3. [Batch Processing](#batch-processing)
-4. [Configuration Management](#configuration-management)
-5. [Advanced Workflows](#advanced-workflows)
-6. [Best Practices](#best-practices)
-7. [Troubleshooting](#troubleshooting)
-8. [Performance Optimization](#performance-optimization)
-9. [Platform-Specific Guides](#platform-specific-guides)
+4. [Debug and Analysis](#debug-and-analysis)
+5. [Configuration Management](#configuration-management)
+6. [Advanced Workflows](#advanced-workflows)
+7. [Best Practices](#best-practices)
+8. [Troubleshooting](#troubleshooting)
+9. [Performance Optimization](#performance-optimization)
+10. [Platform-Specific Guides](#platform-specific-guides)
 
 ## Quick Start
 
@@ -143,6 +144,232 @@ sigsynth batch \
   --platform elastic \
   --output ./multi-platform-tests
 ```
+
+## Debug and Analysis
+
+SigSynth provides comprehensive debugging and analysis capabilities to help you understand rule complexity, identify issues, and optimize test generation.
+
+### Basic Rule Analysis
+
+```bash
+# Analyze rule complexity and detect issues
+sigsynth debug --rule my_rule.yml
+```
+
+**Output includes:**
+- 📋 **Rule Information**: ID, title, level, author, status
+- ⚡ **Complexity Analysis**: Difficulty assessment, field counts, regex patterns
+- ⚠️ **Issue Detection**: Parsing warnings, validation issues, performance concerns
+- 🖥️ **Platform Compatibility**: Compatibility warnings for different platforms
+
+### Advanced Analysis with Tracing
+
+```bash
+# Enable detailed step-by-step tracing
+sigsynth debug --rule my_rule.yml --trace
+```
+
+**Tracing provides:**
+- Step-by-step processing timeline
+- Timing information for each step
+- Success/failure status for each operation
+- Detailed trace summary with statistics
+
+### Test Case Analysis
+
+When an OpenAI API key is available, debug mode includes test case generation and analysis:
+
+```bash
+# Full analysis including test generation
+OPENAI_API_KEY=your-key sigsynth debug --rule my_rule.yml --trace
+```
+
+**Test analysis includes:**
+- 🧪 **Test Generation**: Positive and negative seed creation
+- 📊 **Coverage Analysis**: Field coverage, edge cases, scenario counts
+- ✅ **Validation Results**: Success rates and validation mismatches
+- 🔍 **Individual Test Analysis**: Detailed analysis of specific test cases
+
+### Analyzing Specific Test Cases
+
+```bash
+# Analyze a specific test case by index
+sigsynth debug --rule my_rule.yml --test-case 5 --trace
+```
+
+### Saving Debug Reports
+
+```bash
+# Save comprehensive analysis to JSON
+sigsynth debug --rule my_rule.yml --output analysis.json
+
+# Save with tracing enabled
+sigsynth debug --rule my_rule.yml --trace --output detailed_analysis.json
+```
+
+**Report formats:**
+- **JSON**: Machine-readable detailed analysis
+- **Text**: Plain text reports for documentation
+- **HTML**: Web-viewable styled reports (automatic based on file extension)
+
+### Debug Output Examples
+
+#### Simple Rule Analysis
+```
+🔍 Debugging rule: aws_cloudtrail_change.yml
+
+📋 Rule Information
+  ID: aws-cloudtrail-config-change
+  Title: AWS CloudTrail Configuration Change
+  Level: medium
+  Author: SigSynth
+  Status: test
+
+⚡ Complexity Analysis
+  Difficulty: simple
+  Total Fields: 3
+  Unique Fields: 3
+  Regex Patterns: 0
+  Condition Complexity: 1
+
+✅ No issues detected
+
+🖥️ Platform Compatibility
+  panther: ⚠️ 1 warnings
+    - Fields may need Panther mapping: selection.eventSource
+```
+
+#### Complex Rule Analysis
+```
+⚡ Complexity Analysis
+  Difficulty: complex
+  Total Fields: 11
+  Unique Fields: 11
+  Regex Patterns: 3
+  Condition Complexity: 7
+
+⚠️ Potential Issues
+  🟡 Parse Warning: Rule has no MITRE ATT&CK tags
+  🔴 Validation: Rule has complex condition logic
+  🟠 Performance: High number of regex patterns (3)
+```
+
+#### Test Coverage Analysis
+```
+📊 Test Analysis
+  Total Test Cases: 50
+  Validation Errors: 2
+  Success Rate: 96.0%
+
+📈 Coverage Analysis
+  Positive Scenarios: 25
+  Negative Scenarios: 25
+  Edge Cases Covered: empty_values, special_characters
+  Potential Gaps: insufficient_positive_cases
+```
+
+### Debug Configuration
+
+Enable debug mode globally via configuration:
+
+```yaml
+# sigsynth.yaml
+debug:
+  enabled: true
+  verbose: true
+  trace_validation: true
+  output_dir: ./debug_reports
+```
+
+### Environment Variables
+
+```bash
+# Enable debug mode
+export SIGSYNTH_DEBUG=true
+export SIGSYNTH_DEBUG_VERBOSE=true
+
+# Then run any command
+sigsynth generate --rule my_rule.yml --output ./tests
+```
+
+### Common Debug Workflows
+
+#### Rule Development
+```bash
+# 1. Analyze new rule for issues
+sigsynth debug --rule new_rule.yml
+
+# 2. Fix any issues found
+# 3. Generate tests with debugging
+sigsynth debug --rule new_rule.yml --trace --output analysis.json
+
+# 4. Review test coverage and validation results
+```
+
+#### Rule Optimization
+```bash
+# 1. Analyze complex rule
+sigsynth debug --rule complex_rule.yml --trace
+
+# 2. Identify performance concerns
+# 3. Optimize rule based on complexity analysis
+# 4. Re-analyze to confirm improvements
+sigsynth debug --rule optimized_rule.yml
+```
+
+#### Platform Migration
+```bash
+# Check compatibility before migration
+sigsynth debug --rule rule.yml
+
+# Review platform warnings
+# Adapt rule if necessary
+# Re-check compatibility
+```
+
+### Complexity Levels
+
+**Simple** (Green):
+- ≤3 fields, no regex, simple conditions
+- Fast processing, high reliability
+- Minimal platform compatibility issues
+
+**Medium** (Yellow):
+- 4-8 fields, ≤2 regex patterns, moderate conditions
+- Good balance of coverage and performance
+- May need minor platform adaptations
+
+**Complex** (Orange):
+- 9-15 fields, 3-5 regex patterns, complex conditions
+- Slower processing, requires careful testing
+- Likely needs platform-specific optimizations
+
+**Very Complex** (Red):
+- >15 fields, >5 regex patterns, very complex conditions
+- Significant performance impact
+- Requires extensive testing and optimization
+
+### Issue Categories
+
+**Parsing Warnings** 🟡:
+- Missing descriptions or metadata
+- Incomplete MITRE ATT&CK tagging
+- Non-standard field usage
+
+**Validation Issues** 🔴:
+- Missing detection conditions
+- Empty selection criteria
+- Logic inconsistencies
+
+**Performance Concerns** 🟠:
+- High regex pattern count
+- Excessive field complexity
+- Resource-intensive operations
+
+**Platform Compatibility** 🟣:
+- Unsupported field mappings
+- Platform-specific syntax issues
+- Log source compatibility problems
 
 ## Configuration Management
 
