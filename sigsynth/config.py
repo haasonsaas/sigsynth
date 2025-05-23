@@ -134,13 +134,12 @@ def merge_env_vars(config_data: Dict[str, Any]) -> Dict[str, Any]:
     for env_var, mapping_info in env_mappings.items():
         value = os.getenv(env_var)
         if value is not None:
-            # Convert type if specified
-            if len(mapping_info) > 2:
-                type_func = mapping_info[2]
-                if type_func == bool:
-                    value = value.lower() in ("true", "1", "yes", "on")
-                else:
-                    value = type_func(value)
+            # Convert type (always the last element)
+            type_func = mapping_info[-1]
+            if type_func == bool:
+                value = value.lower() in ("true", "1", "yes", "on")
+            else:
+                value = type_func(value)
             
             path = mapping_info[0] if len(mapping_info) > 1 else mapping_info[0]
             
