@@ -9,11 +9,18 @@ class SigmaRule(BaseModel):
     """Represents a parsed Sigma rule."""
     id: str
     title: str
-    description: Optional[str]
+    description: Optional[str] = None
+    status: Optional[str] = None
+    author: Optional[str] = None
+    date: Optional[str] = None
     detection: Dict[str, Any]
     logsource: Dict[str, Any]
-    level: Optional[str]
-    tags: Optional[list[str]]
+    level: Optional[str] = None
+    tags: Optional[list[str]] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert SigmaRule to dictionary."""
+        return self.model_dump(exclude_unset=True)
 
 def parse_rule(rule_path: Path) -> SigmaRule:
     """Parse a Sigma rule file and return a structured representation.

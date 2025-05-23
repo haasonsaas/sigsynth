@@ -10,6 +10,8 @@ The CLI supports:
 
 import os
 import sys
+import json
+import time
 from pathlib import Path
 import click
 from rich.console import Console
@@ -23,6 +25,7 @@ from .panther_formatter import PantherFormatter
 from .config import load_config, SigSynthConfig
 from .batch_processor import BatchProcessor
 from .platforms import get_platform, list_platforms
+from .debug import DebugTracer, DebugReporter, RuleAnalyzer
 
 console = Console()
 
@@ -329,19 +332,245 @@ def debug(ctx, rule: Path, test_case: int, trace: bool, output: Path):
     try:
         config = ctx.obj['config']
         
-        console.print(f"[bold]Debugging rule: {rule}[/bold]")
-        console.print("[yellow]Debug functionality coming soon![/yellow]")
+        console.print(f"[bold]🔍 Debugging rule: {rule}[/bold]\n")
         
-        # TODO: Implement debug functionality
-        # This would include:
-        # 1. Parse rule and show detection criteria
-        # 2. Generate seeds with explanations
-        # 3. Show expansion process
-        # 4. Validate each step with detailed output
-        # 5. Check platform compatibility
+        # Initialize debug components
+        tracer = DebugTracer(rule.stem, enabled=trace or config.debug.enabled)
+        reporter = DebugReporter(console)
+        analyzer = RuleAnalyzer()
+        
+        # Step 1: Parse rule and analyze complexity
+        tracer.start_step("parse_rule", {"rule_path": str(rule)})
+        try:
+            sigma_rule = parse_rule(rule)
+            detection_criteria = extract_detection_criteria(sigma_rule)
+            
+            # Analyze rule complexity
+            complexity = analyzer.analyze_rule_complexity(sigma_rule)
+            issues = analyzer.identify_rule_issues(sigma_rule)
+            
+            tracer.end_step({
+                "rule_id": sigma_rule.id,
+                "rule_title": sigma_rule.title,
+                "detection_criteria_count": len(detection_criteria) if isinstance(detection_criteria, dict) else 1,
+                "complexity": complexity.estimated_difficulty,
+                "total_fields": complexity.total_fields
+            }, True)
+            
+            # Display rule information
+            console.print(f"[bold cyan]📋 Rule Information[/bold cyan]")
+            console.print(f"  ID: {sigma_rule.id}")
+            console.print(f"  Title: {sigma_rule.title}")
+            console.print(f"  Level: {sigma_rule.level}")
+            console.print(f"  Author: {sigma_rule.author}")
+            console.print(f"  Status: {sigma_rule.status}")
+            
+            # Display complexity analysis
+            console.print(f"\n[bold yellow]⚡ Complexity Analysis[/bold yellow]")
+            console.print(f"  Difficulty: {complexity.estimated_difficulty}")
+            console.print(f"  Total Fields: {complexity.total_fields}")
+            console.print(f"  Unique Fields: {complexity.unique_fields}")
+            console.print(f"  Regex Patterns: {complexity.regex_patterns}")
+            console.print(f"  Condition Complexity: {complexity.condition_complexity}")
+            
+            # Display any issues found
+            if any([issues.parsing_warnings, issues.validation_issues, 
+                   issues.performance_concerns, issues.platform_compatibility]):
+                console.print(f"\n[bold red]⚠️  Potential Issues[/bold red]")
+                
+                for warning in issues.parsing_warnings:
+                    console.print(f"  🟡 Parse Warning: {warning}")
+                for issue in issues.validation_issues:
+                    console.print(f"  🔴 Validation: {issue}")
+                for concern in issues.performance_concerns:
+                    console.print(f"  🟠 Performance: {concern}")
+                for compat in issues.platform_compatibility:
+                    console.print(f"  🟣 Platform: {compat}")
+            else:
+                console.print(f"\n[green]✅ No issues detected[/green]")
+                
+        except Exception as e:
+            tracer.end_step({}, False, str(e))
+            console.print(f"[red]❌ Failed to parse rule: {e}[/red]")
+            if output:
+                reporter.save_report(tracer, output, "json")
+            return
+        
+        # Step 2: Generate and analyze test cases (if API key available)
+        api_key = os.getenv("OPENAI_API_KEY")
+        if api_key and api_key != "test":
+            console.print(f"\n[bold green]🧪 Generating Test Cases[/bold green]")
+            
+            try:
+                # Flatten detection criteria
+                if isinstance(detection_criteria, dict) and 'selection' in detection_criteria:
+                    flat_criteria = detection_criteria['selection']
+                else:
+                    flat_criteria = detection_criteria
+                
+                # Initialize components
+                seed_gen = SeedGenerator()
+                expander = LocalExpander(
+                    random_seed=config.random_seed,
+                    detection_criteria=flat_criteria
+                )
+                validator = RuleValidator(flat_criteria)
+                
+                # Step 2a: Generate seeds
+                tracer.start_step("generate_seeds", {
+                    "seed_samples": config.seed_samples,
+                    "criteria_fields": len(flat_criteria) if isinstance(flat_criteria, dict) else 1
+                })
+                
+                positive_seeds, negative_seeds = seed_gen.generate_seeds(
+                    flat_criteria,
+                    config.seed_samples
+                )
+                
+                tracer.end_step({
+                    "positive_seeds": len(positive_seeds),
+                    "negative_seeds": len(negative_seeds)
+                }, True)
+                
+                console.print(f"  Generated {len(positive_seeds)} positive seeds")
+                console.print(f"  Generated {len(negative_seeds)} negative seeds")
+                
+                # Step 2b: Expand seeds
+                tracer.start_step("expand_seeds", {
+                    "target_samples": min(config.samples, 50)  # Limit for debugging
+                })
+                
+                variants = expander.expand_seeds(
+                    positive_seeds,
+                    negative_seeds,
+                    min(config.samples, 50)  # Limit for debugging
+                )
+                
+                tracer.end_step({
+                    "total_variants": len(variants),
+                    "positive_variants": len([v for v in variants if v[1]]),
+                    "negative_variants": len([v for v in variants if not v[1]])
+                }, True)
+                
+                console.print(f"  Expanded to {len(variants)} test variants")
+                
+                # Step 2c: Validate and analyze
+                tracer.start_step("validate_tests", {"variant_count": len(variants)})
+                
+                validation_errors = 0
+                test_cases = []
+                
+                for i, (variant, expected_trigger) in enumerate(variants):
+                    should_trigger = validator.validate_entry(variant)
+                    
+                    test_case = {
+                        "index": i,
+                        "log": variant,
+                        "should_trigger": expected_trigger,
+                        "actual_trigger": should_trigger,
+                        "validation_match": should_trigger == expected_trigger
+                    }
+                    test_cases.append(test_case)
+                    
+                    if should_trigger != expected_trigger:
+                        validation_errors += 1
+                        if trace:
+                            console.print(f"    ⚠️  Validation mismatch in test {i}: expected {expected_trigger}, got {should_trigger}")
+                
+                tracer.end_step({
+                    "validation_errors": validation_errors,
+                    "success_rate": (len(variants) - validation_errors) / len(variants) if variants else 0
+                }, validation_errors == 0)
+                
+                # Display test analysis
+                console.print(f"\n[bold blue]📊 Test Analysis[/bold blue]")
+                console.print(f"  Total Test Cases: {len(test_cases)}")
+                console.print(f"  Validation Errors: {validation_errors}")
+                console.print(f"  Success Rate: {(len(variants) - validation_errors) / len(variants) * 100:.1f}%" if variants else "  Success Rate: N/A")
+                
+                # Analyze specific test case if requested
+                if test_case is not None and 0 <= test_case < len(test_cases):
+                    console.print(f"\n[bold magenta]🔍 Test Case {test_case} Analysis[/bold magenta]")
+                    tc = test_cases[test_case]
+                    console.print(f"  Expected Trigger: {tc['should_trigger']}")
+                    console.print(f"  Actual Trigger: {tc['actual_trigger']}")
+                    console.print(f"  Validation Match: {'✅' if tc['validation_match'] else '❌'}")
+                    console.print(f"  Log Data: {json.dumps(tc['log'], indent=2)}")
+                
+                # Coverage analysis
+                coverage = analyzer.analyze_test_coverage(sigma_rule, test_cases)
+                console.print(f"\n[bold purple]📈 Coverage Analysis[/bold purple]")
+                console.print(f"  Positive Scenarios: {coverage.positive_scenarios}")
+                console.print(f"  Negative Scenarios: {coverage.negative_scenarios}")
+                console.print(f"  Edge Cases Covered: {', '.join(coverage.edge_cases_covered) if coverage.edge_cases_covered else 'None detected'}")
+                
+                if coverage.missing_coverage:
+                    console.print(f"  Potential Gaps: {', '.join(coverage.missing_coverage[:3])}")
+                
+            except Exception as e:
+                tracer.end_step({}, False, str(e))
+                console.print(f"[red]❌ Error during test generation: {e}[/red]")
+        else:
+            console.print(f"\n[yellow]⚠️  OpenAI API key not available - skipping test generation[/yellow]")
+            console.print(f"   Set OPENAI_API_KEY environment variable to enable test analysis")
+        
+        # Step 3: Platform compatibility check
+        console.print(f"\n[bold cyan]🖥️  Platform Compatibility[/bold cyan]")
+        
+        for platform_name in list_platforms():
+            platform = get_platform(platform_name)
+            warnings = platform.validate_platform_compatibility(sigma_rule.to_dict())
+            
+            if warnings:
+                console.print(f"  {platform_name}: ⚠️  {len(warnings)} warnings")
+                for warning in warnings:
+                    console.print(f"    - {warning}")
+            else:
+                console.print(f"  {platform_name}: ✅ Compatible")
+        
+        # Display trace summary if tracing enabled
+        if trace or config.debug.enabled:
+            console.print(f"\n[bold white]📝 Debug Trace Summary[/bold white]")
+            reporter.print_trace_summary(tracer)
+            
+            if config.debug.verbose:
+                console.print(f"\n[bold white]📋 Detailed Trace[/bold white]")
+                reporter.print_detailed_trace(tracer, show_inputs=True, show_outputs=True)
+        
+        # Save debug output if requested
+        if output:
+            format = "json" if output.suffix.lower() == ".json" else "text"
+            
+            # Generate comprehensive report
+            analysis_report = analyzer.generate_analysis_report(
+                sigma_rule, 
+                test_cases if 'test_cases' in locals() else None
+            )
+            
+            # Combine trace and analysis
+            debug_data = {
+                "rule_analysis": analysis_report,
+                "debug_trace": tracer.get_full_trace() if trace else None,
+                "generated_at": time.time()
+            }
+            
+            output.parent.mkdir(parents=True, exist_ok=True)
+            
+            if format == "json":
+                with open(output, 'w') as f:
+                    json.dump(debug_data, f, indent=2, default=str)
+            else:
+                reporter.save_report(tracer, output, "text")
+            
+            console.print(f"\n[green]💾 Debug report saved to: {output}[/green]")
+        
+        console.print(f"\n[bold green]🎉 Debug analysis complete![/bold green]")
         
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
+        if config.debug.verbose:
+            import traceback
+            console.print(f"[red]Traceback: {traceback.format_exc()}[/red]")
         sys.exit(1)
 
 
