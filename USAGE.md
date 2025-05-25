@@ -829,21 +829,70 @@ platforms:
       panther_version: "1.x"
 ```
 
-### Splunk (Coming Soon)
+### Splunk
 
-**Expected Output Structure**:
+**Output Structure**:
 ```
 tests/splunk/
-├── rule-name-1.spl
-├── rule-name-2.spl
-└── test_manifest.json
+├── rule-name-1/
+│   ├── rule-name-1.spl
+│   ├── rule-name-1_data.json
+│   └── test_manifest.json
+└── rule-name-2/
+    ├── rule-name-2.spl
+    ├── rule-name-2_data.json
+    └── test_manifest.json
 ```
 
-**Planned Features**:
-- SPL query generation
-- Splunk field mappings
-- Index pattern optimization
-- Time range specifications
+**Features**:
+- SPL query generation for testing
+- Sourcetype detection and mapping
+- Test data in JSON format for import
+- Field mapping compatibility checks
+- Bulk import instructions
+
+**Usage**:
+```bash
+# Generate Splunk tests
+sigsynth generate --rule rule.yml --platform splunk --output ./tests
+
+# Import test data and run SPL searches
+curl -X POST 'localhost:8089/services/data/inputs/oneshot' \
+  --data-binary @rule-name-1_data.json
+```
+
+### Elastic
+
+**Output Structure**:
+```
+tests/elastic/
+├── rule-name-1/
+│   ├── rule-name-1_bulk.ndjson
+│   ├── rule-name-1_documents.json
+│   └── test_manifest.json
+└── rule-name-2/
+    ├── rule-name-2_bulk.ndjson
+    ├── rule-name-2_documents.json
+    └── test_manifest.json
+```
+
+**Features**:
+- ECS (Elastic Common Schema) field mapping
+- Bulk import NDJSON format
+- Data stream configuration
+- Index template suggestions
+- Field compatibility analysis
+
+**Usage**:
+```bash
+# Generate Elastic tests
+sigsynth generate --rule rule.yml --platform elastic --output ./tests
+
+# Import via bulk API
+curl -X POST 'localhost:9200/_bulk' \
+  -H 'Content-Type: application/x-ndjson' \
+  --data-binary @rule-name-1_bulk.ndjson
+```
 
 ## Getting Help
 

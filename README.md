@@ -1,17 +1,16 @@
 # SigSynth
 
-A comprehensive detection engineering platform for generating and validating synthetic log tests for Sigma rules. Features AI-powered test generation, batch processing, and multi-platform support with enterprise-grade scalability.
+Generates synthetic log test cases for Sigma rules using OpenAI. Processes single rules or batches of rules with parallel workers and outputs test cases for multiple SIEM platforms.
 
 ## Features
 
-- **Single Rule Processing**: Generate test cases for individual Sigma rules
-- **Batch Processing**: Process multiple rules in parallel with configurable workers
-- **Multi-Platform Support**: Extensible platform framework (currently supports Panther)
-- **Configuration Management**: File-based and environment variable configuration
-- **AI-Powered Seed Generation**: Generate realistic positive and negative test seeds using OpenAI
-- **Local Test Expansion**: Create test variants locally to maximize coverage while minimizing API costs
-- **Rule Validation**: Validate tests against rule logic with detailed error reporting
-- **Comprehensive Debugging**: Rule analysis, complexity metrics, tracing, and detailed reporting
+- Single rule processing and batch processing with parallel workers
+- Multi-platform support: Panther, Splunk, Elastic
+- AI-powered seed generation using OpenAI
+- Local test expansion to minimize API costs
+- Rule validation with detailed error reporting
+- Debug mode with rule analysis and complexity metrics
+- Configuration management via files and environment variables
 
 ## Installation
 
@@ -19,228 +18,170 @@ A comprehensive detection engineering platform for generating and validating syn
 pip install sigsynth
 ```
 
-> **Note**: SigSynth is currently in development. Install from source for the latest features:
-> ```bash
-> git clone https://github.com/haasonsaas/sigsynth.git
-> cd sigsynth
-> pip install -e .
-> ```
+Development installation:
+```bash
+git clone https://github.com/haasonsaas/sigsynth.git
+cd sigsynth
+pip install -e .
+```
 
 ## Quick Start
 
-1. **Set your OpenAI API key**:
+1. Set OpenAI API key:
    ```bash
-   export OPENAI_API_KEY="your-api-key-here"
+   export OPENAI_API_KEY="your-api-key"
    ```
 
-2. **Generate tests for a single rule**:
+2. Generate tests for a single rule:
    ```bash
-   sigsynth generate --rule my_rule.yml --output ./tests
+   sigsynth generate --rule rule.yml --output ./tests
    ```
 
-3. **Process multiple rules in parallel**:
+3. Process multiple rules:
    ```bash
-   sigsynth batch --rules-dir ./sigma-rules --output ./tests --workers 8
+   sigsynth batch --rules-dir ./rules --output ./tests
    ```
 
-4. **Use configuration files for team settings**:
-   ```bash
-   # Create sigsynth.yaml with your preferences
-   sigsynth --config sigsynth.yaml batch --rules-dir ./rules --output ./tests
-   ```
+## Commands
 
-## Usage Examples
+### generate
+Generate test cases for a single Sigma rule.
 
-### Single Rule Testing
 ```bash
-# Basic usage
-sigsynth generate --rule rule.yml --output ./tests
-
-# Production-quality tests
-sigsynth generate \
-  --rule aws_cloudtrail_change.yml \
-  --seed-samples 10 \
-  --samples 500 \
-  --output ./tests
+sigsynth generate --rule rule.yml --platform panther --output ./tests
 ```
 
-### Batch Processing
-```bash
-# Process all rules in a directory
-sigsynth batch --rules-dir ./sigma-rules --output ./tests
+Options:
+- `--rule`: Path to Sigma rule file (required)
+- `--platform`: Target platform (panther, splunk, elastic)
+- `--seed-samples`: Number of seed samples per type (default: 5)
+- `--samples`: Total test samples to generate (default: 200)
+- `--output`: Output directory (required)
+- `--random-seed`: Random seed for reproducible results
 
-# Production CI/CD workflow
-sigsynth batch \
-  --rules-dir ./rules \
-  --exclude "**/draft/**" \
-  --exclude "**/experimental/**" \
-  --workers 16 \
-  --fail-fast \
-  --output ./production-tests
+### batch
+Process multiple Sigma rules in parallel.
+
+```bash
+sigsynth batch --rules-dir ./rules --output ./tests --workers 8
 ```
 
-### Configuration Management
+Options:
+- `--rules-dir`: Directory containing Sigma rules (required)
+- `--pattern`: File patterns to match (can specify multiple)
+- `--exclude`: Patterns to exclude (can specify multiple)
+- `--platform`: Target platforms (can specify multiple)
+- `--output`: Output directory (required)
+- `--workers`: Number of parallel workers
+- `--fail-fast`: Stop on first error
+
+### debug
+Analyze rule processing and test generation.
+
+```bash
+sigsynth debug --rule rule.yml --trace
+```
+
+Options:
+- `--rule`: Path to Sigma rule file (required)
+- `--test-case`: Specific test case index to debug
+- `--trace`: Enable detailed tracing
+- `--output`: Save debug report to file
+
+## Configuration
+
+Configuration priority: CLI options > environment variables > config files
+
+### Config File
+Create `sigsynth.yaml`:
+
 ```yaml
-# sigsynth.yaml
 seed_samples: 10
 samples: 500
 random_seed: 42
 
+platforms:
+  panther:
+    name: panther
+    output_format: json
+  splunk:
+    name: splunk
+    output_format: spl
+  elastic:
+    name: elastic
+    output_format: json
+
 batch:
-  parallel_workers: 8
+  input_patterns:
+    - "**/*.yml"
+    - "**/*.yaml"
   exclude_patterns:
     - "**/draft/**"
     - "**/experimental/**"
+  parallel_workers: 8
+  fail_fast: false
+
+debug:
+  enabled: false
+  verbose: false
+  trace_validation: false
 ```
 
-📖 **[See USAGE.md for comprehensive examples, workflows, and best practices](./USAGE.md)**
-
-### Configuration File
-
-Create a configuration file for team settings:
-
-```bash
-# Copy example configuration
-cp sigsynth.example.yaml sigsynth.yaml
-
-# Edit for your needs
-vim sigsynth.yaml
-
-# Use with any command
-sigsynth --config sigsynth.yaml batch --rules-dir ./rules --output ./tests
-```
-
-## Requirements
-
-- **Python**: 3.8 or higher
-- **OpenAI API Key**: Required for AI-powered test generation ([Get yours here](https://platform.openai.com/account/api-keys))
-- **Memory**: 2GB+ RAM (4GB+ recommended for large rule sets)
-- **Cost**: ~$0.01-0.05 per rule (varies by complexity)
-
-## Configuration
-
-SigSynth provides flexible configuration through:
-
-1. **Configuration files**: `sigsynth.yaml`, `.sigsynth.yaml`, or `~/.sigsynth.yaml`
-2. **Environment variables**: `SIGSYNTH_*` variables override config files
-3. **CLI options**: Highest priority, override everything else
-
-### Key Environment Variables
-- `OPENAI_API_KEY`: Your OpenAI API key (required)
-- `SIGSYNTH_PARALLEL_WORKERS`: Number of parallel workers (default: 4)
-- `SIGSYNTH_SAMPLES`: Total test cases per rule (default: 200)
-- `SIGSYNTH_SEED_SAMPLES`: AI-generated seeds per rule (default: 5)
-
-📖 **[See USAGE.md for complete configuration reference](./USAGE.md#configuration-management)**
+### Environment Variables
+- `OPENAI_API_KEY`: OpenAI API key (required)
+- `SIGSYNTH_PARALLEL_WORKERS`: Number of parallel workers
+- `SIGSYNTH_SAMPLES`: Total test cases per rule
+- `SIGSYNTH_SEED_SAMPLES`: AI-generated seeds per rule
+- `SIGSYNTH_DEBUG`: Enable debug mode
 
 ## Platform Support
 
-### Currently Supported
-- ✅ **Panther**: Full support with JSON test files, field mappings, and compatibility checking
+### Panther
+- Output: JSON test files
+- Features: Field mapping validation, compatibility checking
+- Structure: Individual test files + manifest
 
-### Coming Soon
-- 🚧 **Splunk**: SPL test cases and field mappings
-- 🚧 **Elastic**: EQL queries and index patterns  
-- 🚧 **QRadar**: AQL queries and rule formats
+### Splunk
+- Output: SPL queries + NDJSON data
+- Features: Sourcetype detection, field mapping suggestions
+- Structure: Search file + test data + manifest
 
-**Extensible Architecture**: Easy to add new platforms via the plugin system.
-
-📖 **[See USAGE.md for platform-specific guides](./USAGE.md#platform-specific-guides)**
+### Elastic
+- Output: JSON documents with ECS mapping
+- Features: Bulk import format, index templates
+- Structure: Bulk NDJSON + individual documents + manifest
 
 ## Performance
 
-| Rule Count | Workers | Time | Cost (est.) |
-|------------|---------|------|-----------|
-| 1 rule | 1 | 10s | $0.01-0.05 |
-| 10 rules | 4 | 30s | $0.10-0.50 |
-| 100 rules | 8 | 5min | $1-5 |
-| 1000 rules | 16 | 45min | $10-50 |
+| Rules | Workers | Time | API Cost |
+|-------|---------|------|----------|
+| 1     | 1       | 10s  | $0.01-0.05 |
+| 10    | 4       | 30s  | $0.10-0.50 |
+| 100   | 8       | 5min | $1-5 |
+| 1000  | 16      | 45min| $10-50 |
 
-📊 **Scales efficiently**: Process thousands of rules with parallel workers
+## Requirements
 
-> **Production Ready**: Used by security teams to generate comprehensive test suites for detection rule validation and CI/CD pipelines.
+- Python 3.8+
+- OpenAI API key
+- 2GB+ RAM (4GB+ for large rule sets)
 
 ## Development
 
 ```bash
-# Clone and setup
 git clone https://github.com/haasonsaas/sigsynth.git
 cd sigsynth
 python3 -m venv venv && source venv/bin/activate
 pip install -e .
-
-# Run tests
 pytest tests/ -v
 ```
 
-**Contributing**: See [USAGE.md](./USAGE.md#development) for detailed development guide.
-
-## What's New
-
-### v0.2.0 - Production-Ready Platform
-- 🆕 **Batch Processing**: Parallel processing of multiple rules with configurable workers
-- 🆕 **Multi-Platform Framework**: Extensible architecture ready for Splunk, Elastic, QRadar
-- 🆕 **Configuration Management**: YAML configs with environment variable overrides
-- 🆕 **Enhanced CLI**: New commands with rich console output and progress tracking
-- 🆕 **Comprehensive Debugging**: Rule analysis, complexity metrics, tracing, and detailed reporting
-- 🆕 **World-Class Documentation**: 3 comprehensive guides (USAGE.md, TROUBLESHOOTING.md, examples)
-- 🆕 **Enterprise Features**: CI/CD integration, team configurations, performance optimization
-
-### v0.1.0 - Initial Release
-- Single rule processing with OpenAI-powered test generation
-- Panther platform support
-- Local test expansion and validation
-
 ## Documentation
 
-| Resource | Description |
-|----------|-------------|
-| 📜 **[Usage Guide](./USAGE.md)** | Comprehensive examples, workflows, and best practices |
-| ⚙️ **[Configuration Example](./sigsynth.example.yaml)** | Sample configuration file with all options |
-| 🔧 **[Troubleshooting](./TROUBLESHOOTING.md)** | Quick fixes for common issues |
-| 💬 **[GitHub Discussions](https://github.com/haasonsaas/sigsynth/discussions)** | Community support and questions |
-| 🐛 **[GitHub Issues](https://github.com/haasonsaas/sigsynth/issues)** | Bug reports and feature requests |
-
-```bash
-# Get help for any command
-sigsynth --help
-sigsynth generate --help
-sigsynth batch --help
-sigsynth debug --help
-```
-
-### Debug and Analysis
-
-SigSynth includes comprehensive debugging and analysis capabilities:
-
-```bash
-# Analyze rule complexity and compatibility
-sigsynth debug --rule my_rule.yml
-
-# Enable detailed tracing
-sigsynth debug --rule my_rule.yml --trace
-
-# Save analysis report
-sigsynth debug --rule my_rule.yml --output analysis.json
-
-# Analyze specific test case
-sigsynth debug --rule my_rule.yml --test-case 5 --trace
-```
-
-**Debug Features:**
-- 🔍 **Rule Complexity Analysis**: Difficulty assessment, field counting, regex detection
-- ⚠️ **Issue Detection**: Parsing warnings, validation issues, performance concerns
-- 🖥️ **Platform Compatibility**: Automatic compatibility checking with detailed warnings
-- 📊 **Test Coverage Analysis**: Positive/negative scenarios, field coverage, edge cases
-- 📝 **Detailed Tracing**: Step-by-step processing with timing and success tracking
-- 💾 **Multi-Format Reports**: Console, JSON, text, and HTML output formats
+- [USAGE.md](./USAGE.md) - Comprehensive usage guide
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Common issues
+- [sigsynth.example.yaml](./sigsynth.example.yaml) - Configuration example
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE) for details.
-
----
-
-**🚀 Ready to supercharge your Sigma rule testing?** 
-
-Start with the [Quick Start](#quick-start) above, then dive into the [comprehensive usage guide](./USAGE.md) for advanced workflows and best practices. 
+MIT - see [LICENSE](./LICENSE)
