@@ -57,6 +57,16 @@ class SigSynthConfig(BaseModel):
                 name="panther",
                 output_format="json",
                 custom_options={"test_prefix": "test_"}
+            ),
+            "splunk": PlatformConfig(
+                name="splunk",
+                output_format="spl",
+                custom_options={"default_index": "main"}
+            ),
+            "elastic": PlatformConfig(
+                name="elastic", 
+                output_format="json",
+                custom_options={"ecs_version": "8.0"}
             )
         }
 

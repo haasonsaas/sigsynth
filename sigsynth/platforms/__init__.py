@@ -6,10 +6,14 @@ Each platform implements the BasePlatform interface to ensure consistent functio
 
 from .base import BasePlatform
 from .panther import PantherPlatform
+from .splunk import SplunkPlatform
+from .elastic import ElasticPlatform
 
 # Registry of available platforms
 PLATFORMS = {
     "panther": PantherPlatform,
+    "splunk": SplunkPlatform,
+    "elastic": ElasticPlatform,
 }
 
 def get_platform(name: str) -> BasePlatform:
